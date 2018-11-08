@@ -14,6 +14,7 @@ class board(object):
         self.rows = size
         self.cols = size
         self.cell = np.empty((self.rows, self.cols), dtype = np.int8)
+        self.sucP = np.empty((self.rows, self.cols), dtype = np.float16)
         
         self._target = (self.rows, self.cols)
 
@@ -50,6 +51,7 @@ class board(object):
         terrain = np.random.rand(self.rows, self.cols)
         for i in range(len(self.terrainP)):
             self.cell[terrain >= self.terrainP[i]] = i
+            self.sucP[terrain >= self.terrainP[i]] = 1 - self.failP[i]
         return
 
     #init _target
@@ -67,10 +69,11 @@ class board(object):
         #return
         #PIL.Image image: board image
 
+        normProb = np.square(self.prob / np.max(self.prob))
         image = np.zeros((self.rows*16, self.cols*16, 3), dtype = np.uint8)
         for row in range(self.rows):
             for col in range(self.cols):
-                image[row*16 : row*16+16, col*16 : col*16+16] = self.tile(terrain = self.cell[row, col], prob = self.prob[row, col], target = ((row, col) == self._target), hunter = ((row, col) == self.hunter), search = self.search, beacon = (beacon and not (row%beacon and col%beacon)))
+                image[row*16 : row*16+16, col*16 : col*16+16] = self.tile(terrain = self.cell[row, col], prob = normProb[row, col], target = ((row, col) == self._target), hunter = ((row, col) == self.hunter), search = self.search, beacon = (beacon and not (row%beacon and col%beacon)))
         img = Image.fromarray(image)
         img = ImageChops.invert(img)
         plt.imshow(img)
@@ -110,7 +113,7 @@ class board(object):
         #search
         if self.hunter == self._target:
             print('right block')
-            if np.random.random() < failP[cell[hunter]]:
+            if np.random.random() < self.failP[self.cell[self.hunter]]:
                 report = self.targetMove()
                 return (False, report)
             else:
@@ -142,6 +145,6 @@ class board(object):
         return report
 
 if __name__ == '__main__':
-    b = board(50)
+    b = board(5)
     b.prob = np.random.rand(b.rows, b.cols)
     b.visualize()
