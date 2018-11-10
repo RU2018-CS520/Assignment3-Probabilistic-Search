@@ -1,6 +1,8 @@
 import numpy as np
+import timeit
 
 import frame
+import test
 
 class player(object):
     def __init__(self, board, quickRes = False, double = False):
@@ -9,6 +11,9 @@ class player(object):
         self.reportHistory = []
         self.quickRes = quickRes
         self.double = double
+
+        self.doubleThreshold = np.ceil(np.log(0.01) / np.log(np.asarray(self.b.failP, dtype = np.float16))).astype(np.uint8) - 1
+        self.doubleCount = np.zeros_like(self.b.cell, dtype = np.uint8)
 
         self.success = False
         self.history = []
@@ -93,20 +98,27 @@ class player(object):
 
     def solve(self):
         while not self.success:
-            pos = self.getNext(rule = 1)
+            pos = self.getNext(rule = 3)
 
-            iterNum = 1
-            if self.double and self.b.cell[pos] < self.double:
-                iterNum = iterNum + 1
+            self.success, report = self.b.explore(*pos)
+            self.doubleCount[pos] = self.doubleCount[pos] + 1
+            self.history.append((pos, 's'))
 
-            for i in range(iterNum):
+            if self.success:
+                break
+
+            if self.double and self.b.cell[pos] < self.double and self.doubleCount[pos] >= self.doubleThreshold[self.b.cell[pos]]:
+                self.updateP(*pos)
                 self.success, report = self.b.explore(*pos)
+                self.doubleCount[pos] = self.doubleCount[pos] + 1
                 self.history.append((pos, 's'))
-
                 if self.success:
                     break
-                self.updateP(*pos)
 
+            self.updateP(*pos)
+
+
+            #in case of too long loop
             if len(self.history) > 100000:
                 break
 
@@ -115,11 +127,30 @@ class player(object):
         return
 
 if __name__ == '__main__':
-    b = frame.board(size = 50)
-    p = player(b, double = 2)
-    p.solve()
+    lenCount = []
+    startTime = timeit.default_timer()
+    boardSet = []
 
-    print(len(p.history))
-    print(p.b.prob[p.b._target])
-    print(np.max(p.b.prob))
-    p.b.visualize()
+    while len(lenCount) < 10:
+        b = frame.board(size = 50)
+        p = player(b, double = 2)
+        p.solve()
+        lenCount.append(len(p.history))
+        print('')
+        if len(p.history) > 100000:
+            boardSet.append(b)
+            continue
+
+    endTime = timeit.default_timer()
+
+    time = endTime - startTime
+
+    print(lenCount)
+
+    test.saveMaze((time, lenCount, boardSet), 'D:/Users/endle/Desktop/520/A3/log/', 'r3')
+
+
+
+    # print(p.b.prob[p.b._target])
+    # print(np.max(p.b.prob))
+    # p.b.visualize()
