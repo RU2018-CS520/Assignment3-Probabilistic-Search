@@ -15,6 +15,8 @@ class board(object):
         self.cols = size
         self.cell = np.empty((self.rows, self.cols), dtype = np.int8)
         self.sucP = np.empty((self.rows, self.cols), dtype = np.float16)
+
+        self.border = np.zeros((self.rows, self.cols, 4, 4), dtype = np.bool)
         
         self._target = (self.rows, self.cols)
 
@@ -52,6 +54,8 @@ class board(object):
         for i in range(len(self.terrainP)):
             self.cell[terrain >= self.terrainP[i]] = i
             self.sucP[terrain >= self.terrainP[i]] = 1 - self.failP[i]
+        if self.targetMoving:
+            self.getBorder()
         return
 
     #init _target
@@ -59,6 +63,16 @@ class board(object):
         pos = int(np.floor(np.random.random() * self.rows * self.cols))
         row, col = divmod(pos, self.cols)
         self._target = (row, col)
+        return
+
+    def getBorder(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                index = 0
+                for nRow, nCol in ((row-1, col), (row, col-1), (row, col+1), (row+1, col)):
+                    if 0 <= nRow < self.rows and 0 <= nCol < self.cols:
+                        self.border[row, col, :, index][self.cell[nRow, nCol]] = True
+                    index = index + 1
         return
 
 
@@ -69,7 +83,7 @@ class board(object):
         #return
         #PIL.Image image: board image
 
-        normProb = np.square(self.prob / np.max(self.prob))
+        normProb = (self.prob / np.max(self.prob))
         image = np.zeros((self.rows*16, self.cols*16, 3), dtype = np.uint8)
         for row in range(self.rows):
             for col in range(self.cols):
@@ -117,7 +131,7 @@ class board(object):
                 report = self.targetMove()
                 return (False, report)
             else:
-                return (True, frozenset())
+                return (True, None)
         else:
             report = self.targetMove()
             return (False, report)
@@ -134,17 +148,20 @@ class board(object):
     #target move to neighbor
     def targetMove(self):
         #return:
-        #forzenset report with element type: border type
+        #np.ndarray report with shape = (4, ): target moving report
         
-        report = frozenset()
+        report = np.zeros((4,), dtype = np.uint8)
         if self.targetMoving:
             candidate = self.getNeighbor(*self._target)
-            index = int(np.floor(np.random.random * len(candidate)))
-            report = frozenset([self.cell[self._target], self.cell[candidate[index]]])
+            index = int(np.floor(np.random.random() * len(candidate)))
+            report[self.cell[self._target]] = report[self.cell[self._target]] + 1
+            report[self.cell[candidate[index]]] = report[self.cell[candidate[index]]] + 1
             self._target = candidate[index]
+        # print(report)
         return report
 
 if __name__ == '__main__':
-    b = board(5)
-    b.prob = np.random.rand(b.rows, b.cols)
+    b = board(3)
+    print(b.border[0,0])
+#   b.prob = np.random.rand(b.rows, b.cols)
     b.visualize()
