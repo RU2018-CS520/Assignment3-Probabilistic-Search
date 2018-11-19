@@ -5,11 +5,12 @@ from PIL import Image, ImageChops
 import tile
 
 class board(object):
-    def __init__(self, size = 50, terrainP = [0.2, 0.3, 0.3, 0.2], failP = [0.1, 0.3, 0.7, 0.9], targetMoving = False):
+    def __init__(self, size = 50, terrainP = [0.2, 0.3, 0.3, 0.2], failP = [0.1, 0.3, 0.7, 0.9], moving = False, targetMoving = False):
         #int size in [2 : inf]: size of board
         #list terrainP with element float p: P(terrain)
         #list failP with element float p: P(false negative | terrain)
-        #bool moving: True: target move every failed search; False: stationary target.
+        #bool moving: True: hunter have to move between blocks; False: hunter can teleport
+        #bool targetMoving: True: target move every failed search; False: stationary target.
 
         self.rows = size
         self.cols = size
@@ -28,6 +29,7 @@ class board(object):
         self.terrainP = []
         self.failP = failP
 
+        self.moving = moving
         self.targetMoving = targetMoving
 
         self.getTerrainP(terrainP)
@@ -65,6 +67,7 @@ class board(object):
         self._target = (row, col)
         return
 
+    #init border
     def getBorder(self):
         for row in range(self.rows):
             for col in range(self.cols):
@@ -108,6 +111,9 @@ class board(object):
                 neighbor.append((nRow, nCol))
         return neighbor
 
+    def manhattan(self, x, y):
+        return abs(x[0] - y[0]) + abs(x[1] - y[1])
+
     #action functions
     #search (row, col)
     def explore(self, row = None, col = None):
@@ -145,12 +151,23 @@ class board(object):
         self.hunter = (row, col)
         return
 
+    def getDist(self, row = None, col = None):
+        if row is None or col is None:
+            row, col = self.hunter
+        print(row)
+        print(col)
+        dist = np.empty_like(self.cell, dtype = np.uint8)
+        for tRol in range(self.rows):
+            for tCol in range(self.cols):
+                dist[tRol, tCol] = self.manhattan(x = (row, col), y = (tRol, tCol))
+        return dist
+
     #target move to neighbor
     def targetMove(self):
         #return:
         #np.ndarray report with shape = (4, ): target moving report
         
-        report = np.zeros((4,), dtype = np.uint8)
+        report = np.zeros((4, ), dtype = np.uint8)
         if self.targetMoving:
             candidate = self.getNeighbor(*self._target)
             index = int(np.floor(np.random.random() * len(candidate)))
@@ -161,7 +178,8 @@ class board(object):
         return report
 
 if __name__ == '__main__':
-    b = board(3)
+    b = board(5)
     print(b.border[0,0])
 #   b.prob = np.random.rand(b.rows, b.cols)
     b.visualize()
+    print(b.getDist(0,0))
