@@ -24,18 +24,22 @@ def loadMaze(path, name):
     loadFile.close()
     return mazeList
 
-def test(maxIter = 100000, sampleSize = 5, moving = False, targetMoving = False, double = 2, rule = 2, name = 'r.pkl'):
+def test(maxIter = 100000, sampleSize = 5, multiple = True, moving = False, targetMoving = False, double = 2, rule = 2, name = 'r.pkl'):
     #int maxIter in [1 : inf]: max search times in a board
     #int sampleSize in [1 : inf]: number of test boards
+    #bool multiple: True: rebuild terrain; False: onle re-hide target
     #bool targetMoving: True: target will move; False: target is stationary
     #int double in [1 : 4]: cell types that need double check. False: no double check
     #int rule in [1 : 3]: search strategy. #WARN: rule 3 is abandoned
+
+    b = frame.board(size = 50, moving = moving, targetMoving = targetMoving)
+    bList = frame.boardFactory(b, sampleSize, multiple = multiple)
+
     lenCount = []
     startTime = timeit.default_timer()
     boardSet = []
 
-    while len(lenCount) < sampleSize:
-        b = frame.board(size = 10, moving = moving, targetMoving = targetMoving)
+    for b in bList:
         p = solution.player(b, double = double, maxIter = maxIter, rule = rule)
         p.solve()
         lenCount.append(len(p.history))
@@ -54,4 +58,4 @@ def test(maxIter = 100000, sampleSize = 5, moving = False, targetMoving = False,
     return
 
 if __name__ == '__main__':
-    test(maxIter = 100000, sampleSize = 5, moving = True, targetMoving = False, double = True, rule = 1, name = 'r2.pkl')
+    test(maxIter = 100000, sampleSize = 5, multiple = False, moving = True, targetMoving = False, double = True, rule = 1, name = 'r2.pkl')
