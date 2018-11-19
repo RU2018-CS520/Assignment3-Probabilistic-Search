@@ -14,10 +14,11 @@ class board(object):
 
         self.rows = size
         self.cols = size
-        self.cell = np.empty((self.rows, self.cols), dtype = np.int8)
+        self.cell = np.empty((self.rows, self.cols), dtype = np.uint8)
         self.sucP = np.empty((self.rows, self.cols), dtype = np.float16)
 
         self.border = np.zeros((self.rows, self.cols, 4, 4), dtype = np.bool)
+        self.dist = np.zeros((self.rows, self.cols, self.rows, self.cols), dtype = np.uint8)
         
         self._target = (self.rows, self.cols)
 
@@ -35,6 +36,8 @@ class board(object):
         self.getTerrainP(terrainP)
         self.buildTerrain()
         self.hideTarget()
+        if self.moving:
+            self.getDist()
 
         self.tile = tile.tile()
         return
@@ -76,6 +79,13 @@ class board(object):
                     if 0 <= nRow < self.rows and 0 <= nCol < self.cols:
                         self.border[row, col, :, index][self.cell[nRow, nCol]] = True
                     index = index + 1
+        return
+
+    #init dist
+    def getDist(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self.dist[row, col] = self.getBlockDist(row, col)
         return
 
 
@@ -151,11 +161,9 @@ class board(object):
         self.hunter = (row, col)
         return
 
-    def getDist(self, row = None, col = None):
+    def getBlockDist(self, row = None, col = None):
         if row is None or col is None:
             row, col = self.hunter
-        print(row)
-        print(col)
         dist = np.empty_like(self.cell, dtype = np.uint8)
         for tRol in range(self.rows):
             for tCol in range(self.cols):
@@ -178,8 +186,8 @@ class board(object):
         return report
 
 if __name__ == '__main__':
-    b = board(5)
-    print(b.border[0,0])
+    b = board(3, moving = True)
+#   print(b.border[0,0])
 #   b.prob = np.random.rand(b.rows, b.cols)
     b.visualize()
-    print(b.getDist(0,0))
+    print(b.dist)
