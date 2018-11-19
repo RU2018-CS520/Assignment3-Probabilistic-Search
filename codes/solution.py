@@ -211,6 +211,8 @@ class player(object):
         elif rule == 3:
             pos = self.maxInfo(row, col)
         elif rule == 4:
+            pos = self.minMove(row, col)
+        elif rule == 5:
             pos = self.minCost(row, col)
         else:
             print('E: solution.getNext. wrong rule number.')
@@ -241,10 +243,45 @@ class player(object):
         pos = np.unravel_index(np.argmin(value), value.shape) #use min instead
         return pos
 
-    #rule 4
+    #rule 4 for moving = True, targetMoving = False
+    def minMove(self, row = None, col = None):
+        if row is None or col is None:
+            row, col = self.b.hunter
+        find = self.b.prob * self.b.sucP
+        value = find / np.exp2(self.b.dist[row, col])
+        pos = np.unravel_index(np.argmax(value), value.shape)
+        return pos
+    
+    #rule 5 for moving = True, targetMoving = True #WARN: DO NOT use in targetMoving = False, because factor will be truncated
     def minCost(self, row = None, col = None):
         if row is None or col is None:
-            pass
+            row, col = self.b.hunter
+        factor = np.empty_like(self.b.prob, dtype = np.float16)
+        searchCost = np.empty_like(self.b.prob, dtype = np.float16)
+        movingCost = np.zeros_like(self.b.prob, dtype = np.float16)
+
+        base = np.sum(self.b.prob / self.b.sucP)
+
+        valid = (self.b.prob != 0)
+        if self.b.targetMoving:
+            factor[valid] = 1 / (1 - self.b.prob[valid] * self.b.sucP[valid])
+            searchCost[valid] = base - factor[valid] * (base - self.b.prob[valid])
+        else:
+            factor = 1 / (1 - self.b.prob * self.b.sucP)
+            searchCost = base - factor * (base - self.b.prob)
+
+        if self.b.moving:
+            tempCost = np.sum(self.b.prob * self.b.dist[row, col])
+            for nRow in range(self.b.rows):
+                for nCol in range(self.b.cols):
+                    if valid[nRow, nCol]:
+                        movingCost[nRow, nCol] = tempCost - factor[nRow, nCol] * np.sum(self.b.prob * self.b.dist[nRow, nCol])
+
+        value = searchCost - movingCost
+        value[~valid] = np.inf
+
+        pos = np.unravel_index(np.argmin(value), value.shape) #use min instead
+        return pos
 
     #solver
     def solve(self):
@@ -255,7 +292,6 @@ class player(object):
             self.success, report = self.search(*pos)
             self.doubleCount[pos] = self.doubleCount[pos] + 1
             
-
             if self.success:
                 break
 
@@ -274,24 +310,19 @@ class player(object):
             if self.b.targetMoving:
                 self.updateR(self.b.prob, report)
 
-
             #in case of too long loop
             if len(self.searchHistory) > self.maxIter:
                 break
 
-            # self.b.visualize()
+        #   self.b.visualize()
         return
 
-def foo(x):
-    return np.where(x)[0][0]
 
 if __name__ == '__main__':
-    b = frame.board(size = 4, moving = True, targetMoving = False)
-    p = player(b, double = 2, rule = 2)
+    b = frame.board(size = 50, moving = True, targetMoving = True)
+    p = player(b, double = 2, rule = 5)
     p.solve()
     print(p.history)
-    temp = list(map(foo, p.targetHistory))
-    print(temp)
     print(len(p.targetHistory))
     print(len(p.history))
 
