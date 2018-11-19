@@ -24,7 +24,7 @@ def loadMaze(path, name):
     loadFile.close()
     return mazeList
 
-def test(maxIter = 100000, sampleSize = 5, targetMoving = False, double = 2, rule = 2, name = 'r.pkl'):
+def test(maxIter = 100000, sampleSize = 5, moving = False, targetMoving = False, double = 2, rule = 2, name = 'r.pkl'):
     #int maxIter in [1 : inf]: max search times in a board
     #int sampleSize in [1 : inf]: number of test boards
     #bool targetMoving: True: target will move; False: target is stationary
@@ -35,7 +35,7 @@ def test(maxIter = 100000, sampleSize = 5, targetMoving = False, double = 2, rul
     boardSet = []
 
     while len(lenCount) < sampleSize:
-        b = frame.board(size = 50, targetMoving = targetMoving)
+        b = frame.board(size = 10, moving = moving, targetMoving = targetMoving)
         p = solution.player(b, double = double, maxIter = maxIter, rule = rule)
         p.solve()
         lenCount.append(len(p.history))
@@ -54,4 +54,4 @@ def test(maxIter = 100000, sampleSize = 5, targetMoving = False, double = 2, rul
     return
 
 if __name__ == '__main__':
-    test(maxIter = 100000, sampleSize = 5, targetMoving = True, double = True, rule = 1, name = 'r2.pkl')
+    test(maxIter = 100000, sampleSize = 5, moving = True, targetMoving = False, double = True, rule = 1, name = 'r2.pkl')
