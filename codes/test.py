@@ -1,5 +1,6 @@
 import pickle as pkl
 import timeit
+import copy
 
 import frame
 import solution
@@ -24,7 +25,7 @@ def loadMaze(path, name):
     loadFile.close()
     return mazeList
 
-def test(maxIter = 100000, sampleSize = 5, multiple = True, moving = False, targetMoving = False, double = 2, rule = 2, name = 'r.pkl'):
+def test(maxIter = 100000, sampleSize = 5, multiple = True, moving = False, targetMoving = False, double = 2, ruleList = [2], name = 'r.pkl'):
     #int maxIter in [1 : inf]: max search times in a board
     #int sampleSize in [1 : inf]: number of test boards
     #bool multiple: True: rebuild terrain; False: onle re-hide target
@@ -32,22 +33,27 @@ def test(maxIter = 100000, sampleSize = 5, multiple = True, moving = False, targ
     #int double in [1 : 4]: cell types that need double check. False: no double check
     #int rule in [1 : 3]: search strategy. #WARN: rule 3 is abandoned
 
-    b = frame.board(size = 50, moving = moving, targetMoving = targetMoving)
-    bList = frame.boardFactory(b, sampleSize, multiple = multiple)
+    seed = frame.board(size = 5, moving = moving, targetMoving = targetMoving)
 
-    lenCount = []
+    lenCount = [[], [], [], [], [], []]
+    boardSet = [[], [], [], [], [], []]
     startTime = timeit.default_timer()
-    boardSet = []
-
-    for b in bList:
-        p = solution.player(b, double = double, maxIter = maxIter, rule = rule)
-        p.solve()
-        lenCount.append(len(p.history))
-        print('')
-        if len(p.searchHistory) > maxIter:
-            boardSet.append(b)
-            continue
-
+    
+    for i in range(sampleSize): 
+        bList = frame.boardFactory(seed, 1, multiple = multiple)
+    
+        for b in bList:
+            for rule in ruleList:
+                tempB = copy.deepcopy(b)
+                p = solution.player(tempB, double = double, maxIter = maxIter, rule = rule)
+                p.solve()
+                lenCount[rule].append(len(p.history))
+                print('')
+                if len(p.searchHistory) > maxIter:
+                    boardSet[rule].append(tempB)
+                    continue
+                tempB.visualize()
+    
     endTime = timeit.default_timer()
 
     time = endTime - startTime
@@ -58,4 +64,4 @@ def test(maxIter = 100000, sampleSize = 5, multiple = True, moving = False, targ
     return
 
 if __name__ == '__main__':
-    test(maxIter = 100000, sampleSize = 5, multiple = False, moving = True, targetMoving = False, double = True, rule = 1, name = 'r2.pkl')
+    test(maxIter = 100000, sampleSize = 5, multiple = True, moving = True, targetMoving = True, double = True, ruleList = [1, 2, 5], name = 'r2.pkl')
