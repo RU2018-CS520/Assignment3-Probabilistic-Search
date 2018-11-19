@@ -154,6 +154,32 @@ class player(object):
         tempProb = tempProb / sumP
         return tempProb
 
+    def moveTo(self, row, col):
+        while self.b.hunter != (row, col):
+            if self.b.hunter[0] < row:
+                self.b.move(self.b.hunter[0] + 1, self.b.hunter[1])
+                self.history.append((self.b.hunter, 'm'))
+            elif self.b.hunter[0] > row:
+                self.b.move(self.b.hunter[0] - 1, self.b.hunter[1])
+                self.history.append((self.b.hunter, 'm'))
+            if self.b.hunter[1] < col:
+                self.b.move(self.b.hunter[0], self.b.hunter[1] + 1)
+                self.history.append((self.b.hunter, 'm'))
+            elif self.b.hunter[1] > col:
+                self.b.move(self.b.hunter[0], self.b.hunter[1] - 1)
+                self.history.append((self.b.hunter, 'm'))
+        return
+
+    def search(self, row, col):
+        #move or teleport
+        if self.b.moving:
+            self.moveTo(row, col)
+
+        #explore
+        self.searchHistory.append((row, col))
+        self.history.append(((row, col), 's'))
+        return self.b.explore(row, col)
+
     #report tool functions
     #get temp target movement
     def solveTarget(self, report):
@@ -238,10 +264,9 @@ class player(object):
             pos = self.getNext(rule = self.rule)
 
             #explore
-            self.success, report = self.b.explore(*pos)
+            self.success, report = self.search(*pos)
             self.doubleCount[pos] = self.doubleCount[pos] + 1
-            self.searchHistory.append(pos)
-            self.history.append((pos, 's'))
+            
 
             if self.success:
                 break
@@ -251,10 +276,8 @@ class player(object):
                 self.updateP(self.b.prob, *pos)
                 if self.b.targetMoving:
                     self.updateR(self.b.prob, report)
-                self.success, report = self.b.explore(*pos)
+                self.success, report = self.search(*pos)
                 self.doubleCount[pos] = self.doubleCount[pos] + 1
-                self.searchHistory.append(pos)
-                self.history.append((pos, 's'))
                 if self.success:
                     break
 
@@ -275,8 +298,8 @@ def foo(x):
     return np.where(x)[0][0]
 
 if __name__ == '__main__':
-    b = frame.board(size = 50, targetMoving = True)
-    p = player(b, double = 2)
+    b = frame.board(size = 4, moving = True, targetMoving = False)
+    p = player(b, double = 2, rule = 2)
     p.solve()
     print(p.history)
     temp = list(map(foo, p.targetHistory))
