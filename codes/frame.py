@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from PIL import Image, ImageChops
+import copy
 
 import tile
 
@@ -185,9 +186,27 @@ class board(object):
         # print(report)
         return report
 
+
+#use seedBoard generate num boards
+def boardFactory(seedBoard, num = 5000, multiple = True):
+    if seedBoard is None:
+        seedBoard = board(50, moving = moving, targetMoving = targetMoving)
+
+    boardList = []
+    for i in range(num):
+        b = copy.deepcopy(seedBoard)
+        if multiple:
+            b.buildTerrain()
+        b.hideTarget()
+        boardList.append(b)
+    return boardList
+
+
 if __name__ == '__main__':
-    b = board(3, moving = True)
-#   print(b.border[0,0])
-#   b.prob = np.random.rand(b.rows, b.cols)
-    b.visualize()
-    print(b.dist)
+    b = board(3, moving = True, targetMoving = True)
+    bl = boardFactory(b, 3, multiple = False)
+    bl[0].border = np.ones((3,3), dtype = np.bool)
+    print(bl[0].border)
+    print(bl[1].border)
+    for b in bl:
+        b.visualize()
