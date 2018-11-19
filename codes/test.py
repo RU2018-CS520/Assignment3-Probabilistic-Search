@@ -33,7 +33,7 @@ def test(maxIter = 100000, sampleSize = 5, multiple = True, moving = False, targ
     #int double in [1 : 4]: cell types that need double check. False: no double check
     #int rule in [1 : 3]: search strategy. #WARN: rule 3 is abandoned
 
-    seed = frame.board(size = 5, moving = moving, targetMoving = targetMoving)
+    seed = frame.board(size = 50, moving = moving, targetMoving = targetMoving)
 
     lenCount = [[], [], [], [], [], []]
     boardSet = [[], [], [], [], [], []]
@@ -64,4 +64,4 @@ def test(maxIter = 100000, sampleSize = 5, multiple = True, moving = False, targ
     return
 
 if __name__ == '__main__':
-    test(maxIter = 100000, sampleSize = 5, multiple = True, moving = True, targetMoving = True, double = True, ruleList = [1, 2, 5], name = 'r2.pkl')
+    test(maxIter = 100000, sampleSize = 5000, multiple = True, moving = True, targetMoving = True, double = True, ruleList = [1, 2, 5], name = 'r2.pkl')
