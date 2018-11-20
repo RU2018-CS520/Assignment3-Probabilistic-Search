@@ -34,13 +34,15 @@ class board(object):
         self.moving = moving
         self.targetMoving = targetMoving
 
-        self. targetHistory = []
+        self.targetHistory = []
+        self.probHistory = []
 
         self.getTerrainP(terrainP)
         self.buildTerrain()
         self.hideTarget()
         if self.moving:
             self.getDist()
+        self.probHistory.append(self.prob.copy())
 
         self.tile = tile.tile()
         return
@@ -71,7 +73,8 @@ class board(object):
         pos = int(np.floor(np.random.random() * self.rows * self.cols))
         row, col = divmod(pos, self.cols)
         self._target = (row, col)
-        self.targetHistory.append(self._target)
+        if self.targetMoving:
+            self.targetHistory.append(self._target)
         return
 
     #init border
@@ -128,6 +131,15 @@ class board(object):
     def manhattan(self, x, y):
         return abs(x[0] - y[0]) + abs(x[1] - y[1])
 
+    def getBlockDist(self, row = None, col = None):
+        if row is None or col is None:
+            row, col = self.hunter
+        dist = np.empty_like(self.cell, dtype = np.uint8)
+        for tRol in range(self.rows):
+            for tCol in range(self.cols):
+                dist[tRol, tCol] = self.manhattan(x = (row, col), y = (tRol, tCol))
+        return dist
+
     #action functions
     #search (row, col)
     def explore(self, row = None, col = None):
@@ -135,7 +147,7 @@ class board(object):
         #int col: position
         #return:
         #bool res: True: done! False: not found
-        #forzenset report with element type: border type
+        #np.ndarray report with shape = (4, ): target moving report
 
         #teleport
         if row is None or col is None:
@@ -146,7 +158,7 @@ class board(object):
 
         #search
         if self.hunter == self._target:
-            print('right block')
+            #print('right block')
             if np.random.random() < self.failP[self.cell[self.hunter]]:
                 report = self.targetMove()
                 return (False, report)
@@ -164,15 +176,6 @@ class board(object):
         self.search = False
         self.hunter = (row, col)
         return
-
-    def getBlockDist(self, row = None, col = None):
-        if row is None or col is None:
-            row, col = self.hunter
-        dist = np.empty_like(self.cell, dtype = np.uint8)
-        for tRol in range(self.rows):
-            for tCol in range(self.cols):
-                dist[tRol, tCol] = self.manhattan(x = (row, col), y = (tRol, tCol))
-        return dist
 
     #target move to neighbor
     def targetMove(self):
