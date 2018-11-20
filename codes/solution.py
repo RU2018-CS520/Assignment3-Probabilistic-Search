@@ -151,7 +151,10 @@ class player(object):
             sumP = np.sum(tempProb)
         if sumP == 0:
             print('E: solution.normalizeP. zero sumP')
-            exit()
+            print(np.max(tempProb))
+            print(list(map(lambda x: np.where(x)[0][0], self.targetHistory)))
+            print(list(map(lambda x: np.where(x)[0], self.reportHistory)))
+            self.b.visualize()
         tempProb = tempProb / sumP
         return tempProb
 
@@ -302,6 +305,7 @@ class player(object):
                 self.updateP(self.b.prob, *pos)
                 if self.b.targetMoving:
                     self.updateR(self.b.prob, report)
+                self.b.probHistory.append(self.b.prob.copy())
                 self.success, report = self.search(*pos)
                 self.doubleCount[pos] = self.doubleCount[pos] + 1
                 if self.success:
@@ -311,6 +315,7 @@ class player(object):
             self.updateP(self.b.prob, *pos)
             if self.b.targetMoving:
                 self.updateR(self.b.prob, report)
+            self.b.probHistory.append(self.b.prob.copy())
 
             #in case of too long loop
             if len(self.searchHistory) > self.maxIter:
@@ -321,16 +326,17 @@ class player(object):
 
 
 if __name__ == '__main__':
-    b = frame.board(size = 50, moving = True, targetMoving = True)
-    p = player(b, double = 2, rule = 5)
+    b = frame.board(size = 50, moving = False, targetMoving = False)
+    p = player(b, double = 2, rule = 2)
     p.solve()
+    print(b.probHistory)
     print(p.history)
     print(len(p.history))
     # for i in range(500):
     #   tempB = copy.deepcopy(b)
     #   tempB.buildTerrain()
     #   tempB.hideTarget()
-    #   p = player(tempB, double = 2, rule = 2)
+    #   p = player(tempB, double = 2, rule = 5)
     #   p.solve()
     #   # print(p.history)
     #   # print(len(p.targetHistory))
