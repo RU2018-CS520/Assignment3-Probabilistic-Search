@@ -34,6 +34,8 @@ class board(object):
         self.moving = moving
         self.targetMoving = targetMoving
 
+        self. targetHistory = []
+
         self.getTerrainP(terrainP)
         self.buildTerrain()
         self.hideTarget()
@@ -69,6 +71,8 @@ class board(object):
         pos = int(np.floor(np.random.random() * self.rows * self.cols))
         row, col = divmod(pos, self.cols)
         self._target = (row, col)
+        if self.targetMoving:
+            self.targetHistory.append(self._target)
         return
 
     #init border
@@ -183,6 +187,7 @@ class board(object):
             report[self.cell[self._target]] = report[self.cell[self._target]] + 1
             report[self.cell[candidate[index]]] = report[self.cell[candidate[index]]] + 1
             self._target = candidate[index]
+            self.targetHistory.append(self._target)
         # print(report)
         return report
 
@@ -203,10 +208,6 @@ def boardFactory(seedBoard, num = 5000, multiple = True):
 
 
 if __name__ == '__main__':
-    b = board(3, moving = True, targetMoving = True)
-    bl = boardFactory(b, 3, multiple = False)
-    bl[0].border = np.ones((3,3), dtype = np.bool)
-    print(bl[0].border)
-    print(bl[1].border)
-    for b in bl:
-        b.visualize()
+    b = board(50, moving = True, targetMoving = True)
+    b.explore()
+    print(b.targetHistory)
