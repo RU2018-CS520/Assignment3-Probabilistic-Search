@@ -320,13 +320,15 @@ class Canvas(FigureCanvas):
             image[px*16 : px*16+16, py*16 : py*16+16] = b.tile(terrain = b.cell[px, py], prob = normProb[px, py], target = False, hunter = False, search = b.search, beacon = (beacon and not (px%beacon and py%beacon)))
 
             if hint == 's':
-                normProb = (b.probHistory[currentStepTarget - 1] / np.max(b.probHistory[currentStepTarget - 1]))
+                print(np.max(b.probHistory[currentStep - 1]))
+                print(np.sum(b.probHistory[currentStep - 1]))
+                normProbPre = (b.probHistory[currentStepTarget - 1] / np.max(b.probHistory[currentStepTarget - 1]))
                 for row in range(b.rows):
                     for col in range(b.cols):
-                        image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProb[row, col], target = False, hunter = False, search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
+                        image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProbPre[row, col], target = False, hunter = False, search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
 
                 [ptx, pty] = b.targetHistory[currentStepTarget - 1]
-                image[ptx*16 : ptx*16+16, pty*16 : pty*16+16] = b.tile(terrain = b.cell[ptx, pty], prob = normProb[ptx, pty], target = False, hunter = False, search = b.search, beacon = (beacon and not (ptx%beacon and pty%beacon)))
+                image[ptx*16 : ptx*16+16, pty*16 : pty*16+16] = b.tile(terrain = b.cell[ptx, pty], prob = normProbPre[ptx, pty], target = False, hunter = False, search = b.search, beacon = (beacon and not (ptx%beacon and pty%beacon)))
 
         [x, y], hint = p.history[currentStepAgent]
         [tx, ty] = b.targetHistory[currentStepTarget]
