@@ -97,15 +97,14 @@ class Window(QWidget):
         grid.addWidget(self.radio4, 4, 1)
         grid.addWidget(self.radio5, 5, 0)
 
-        grid.addWidget(self.initLabel("For how long can an agent stay in a cell?"), 6, 0, 1, 2)
+        grid.addWidget(self.initLabel("Double check level:"), 6, 0)
         self.comboBox = QComboBox()
-        self.comboBox.addItem('0')
+        self.comboBox.addItem('False')
         self.comboBox.addItem('1')
         self.comboBox.addItem('2')
         self.comboBox.addItem('3')
         self.comboBox.addItem('4')
-        grid.addWidget(self.comboBox, 7, 0)
-        grid.addWidget(self.initLabel('Steps'), 7, 1)
+        grid.addWidget(self.comboBox, 6, 1)
 
         self.buttonStart = QPushButton('Generate and Solve', self)
         self.buttonStart.clicked.connect(self.start)
@@ -200,7 +199,10 @@ class Window(QWidget):
             rule = 4
         elif self.radio5.isChecked():
             rule = 5
-        double = int(self.comboBox.currentText())
+        if str(self.comboBox.currentText()) == 'False':
+            double = False
+        else:
+            double = int(self.comboBox.currentText())
 
         print('Trying to construct a(an) ' + repr(rows) + 'x' + repr(cols) + ' maze. Agent teleporting is ' + repr(moving) + '. Target moving is ' + repr(targetMoving))
         print('Rule ' + repr(rule) + ' double ' + repr(double))
@@ -210,8 +212,11 @@ class Window(QWidget):
         print('Player is ready, trying to solve.')
         self.p.solve()
         print('Done')
+        print(len(self.p.history))
         print(self.p.history)
+        print(len(b.targetHistory))
         print(b.targetHistory)
+        print(len(b.probHistory))
 
         self.canvas.setArguement(self.p, b)
         self.canvas.initUI()
@@ -243,25 +248,23 @@ class Canvas(FigureCanvas):
                 QSizePolicy.Expanding,
                 QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
-        #self.initUI()
-        #self.plot()
 
-    def setArguement(self, player, board, _beacon = 16, _cheat = False):
+    def setArguement(self, player, board, _beacon = 16):
         global p
         global b
         global beacon
-        global cheat
         p = player
         b = board
         beacon = _beacon
-        cheat = _cheat
 
     def start(self):
         print('Started plotting')
-        global currentStep
+        global currentStepAgent
+        global currentStepTarget
         global p
         global anim
-        currentStep = 0
+        currentStepAgent = 0
+        currentStepTarget = 0
         anim = FuncAnimation(self.fig, self.animate, init_func = self.init, interval = 20, blit = True)
         #self.draw()
         print('Plotting completed')
@@ -270,10 +273,13 @@ class Canvas(FigureCanvas):
         print('Initializing animation')
         global image
         global p
-        image = np.zeros((p.m.rows*16, p.m.cols*16, 3), dtype = np.uint8)
-        for row in range(p.m.rows):
-            for col in range(p.m.cols):
-                image[row*16 : row*16+16, col*16 : col*16+16] = p.m.tile(covered = True, mine = False, clue = False, hint = False, flag = False, hide = False)
+        global b
+        prob = np.full((b.rows, b.cols), (1. / (b.rows * b.cols)), dtype = np.float16)
+        normProb = (prob / np.max(prob))
+        image = np.zeros((b.rows*16, b.cols*16, 3), dtype = np.uint8)
+        for row in range(b.rows):
+            for col in range(b.cols):
+                image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProb[row, col], target = ((row, col) == b.targetHistory[0]), hunter = ((row, col) == p.history[0]), search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
         img = Image.fromarray(image)
         img = ImageChops.invert(img)
         im = plt.imshow(img, animated = True)
@@ -284,8 +290,6 @@ class Canvas(FigureCanvas):
         print('Plotting step ' + repr(i) + ' . Please wait.')
         global currentStep
         global image
-        global beacon
-        global cheat
         l = 1
         r = i + 1
         if i >= currentStep:
@@ -303,21 +307,44 @@ class Canvas(FigureCanvas):
         currentStep = i
 
     def animate(*args):
-        global currentStep
+        global currentStepAgent
+        global currentStepTarget
         global p
-        global beacon
-        global cheat
         global image
+        global beacon
         global anim
-        print('Drawing step ' + repr(currentStep))
-        [x, y], hint = p.history[currentStep]
-        image[x*16 : x*16+16, y*16 : y*16+16] = p.m.tile(covered = p.m.covered[x, y], mine = p.m._mine[x, y], clue = p.m._clue[x, y], hint = p.m.hint[x, y], flag = p.m.flag[x, y], beacon = beacon and not (x%beacon and y%beacon), cheat = cheat, hide = False)
+        print('Drawing step ' + repr(currentStepAgent))
+        if currentStepAgent > 0:
+            [px, py], hint = p.history[currentStepAgent - 1]
+            normProb = (b.probHistory[currentStepTarget] / np.max(b.probHistory[currentStepTarget]))
+            image[px*16 : px*16+16, py*16 : py*16+16] = b.tile(terrain = b.cell[px, py], prob = normProb[px, py], target = False, hunter = False, search = b.search, beacon = (beacon and not (px%beacon and py%beacon)))
+
+            if hint == 's':
+                normProb = (b.probHistory[currentStepTarget - 1] / np.max(b.probHistory[currentStepTarget - 1]))
+                for row in range(b.rows):
+                    for col in range(b.cols):
+                        image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProb[row, col], target = False, hunter = False, search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
+
+                [ptx, pty] = b.targetHistory[currentStepTarget - 1]
+                image[ptx*16 : ptx*16+16, pty*16 : pty*16+16] = b.tile(terrain = b.cell[ptx, pty], prob = normProb[ptx, pty], target = False, hunter = False, search = b.search, beacon = (beacon and not (ptx%beacon and pty%beacon)))
+
+        [x, y], hint = p.history[currentStepAgent]
+        [tx, ty] = b.targetHistory[currentStepTarget]
+        normProb = (b.probHistory[currentStepTarget] / np.max(b.probHistory[currentStepTarget]))
+        print(normProb[x, y])
+        if [x, y] == [tx, ty]:
+            image[tx*16 : tx*16+16, ty*16 : ty*16+16] = b.tile(terrain = b.cell[tx, ty], prob = normProb[tx, ty], target = True, hunter = True, search = b.search, beacon = (beacon and not (tx%beacon and ty%beacon)))
+        else:
+            image[x*16 : x*16+16, y*16 : y*16+16] = b.tile(terrain = b.cell[x, y], prob = normProb[x, y], target = False, hunter = True, search = b.search, beacon = (beacon and not (x%beacon and y%beacon)))
+            image[tx*16 : tx*16+16, ty*16 : ty*16+16] = b.tile(terrain = b.cell[tx, ty], prob = normProb[tx, ty], target = True, hunter = False, search = b.search, beacon = (beacon and not (tx%beacon and ty%beacon)))
         img = Image.fromarray(image)
         img = ImageChops.invert(img)
         im = plt.imshow(img, animated = True)
         print('Finished')
-        currentStep += 1
-        if currentStep >= len(p.history):
+        currentStepAgent += 1
+        if hint == 's':
+            currentStepTarget += 1
+        if currentStepAgent >= len(p.history):
             print('Stop!')
             anim.event_source.stop()
         return im,
@@ -326,26 +353,17 @@ class Canvas(FigureCanvas):
         global image
         global p
         global b
+        global beacon
         prob = np.full((b.rows, b.cols), (1. / (b.rows * b.cols)), dtype = np.float16)
         normProb = (prob / np.max(prob))
         image = np.zeros((b.rows*16, b.cols*16, 3), dtype = np.uint8)
         for row in range(b.rows):
             for col in range(b.cols):
-                image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProb[row, col], target = ((row, col) == b.target), hunter = ((row, col) == b.hunter), search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
+                image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProb[row, col], target = ((row, col) == b.targetHistory[0]), hunter = ((row, col) == p.history[0]), search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
         img = Image.fromarray(image)
         img = ImageChops.invert(img)
         im = plt.imshow(img, animated = True)
         self.draw()
-
-    def plot(self, m, cnt, beacon = 16, cheat = False):
-        for row in range(m.rows):
-            for col in range(m.cols):
-                self.image[x*16 : x*16+16, y*16 : y*16+16] = p.m.tile(covered = p.m.covered[x, y], mine = p.m._mine[x, y], clue = p.m._clue[x, y], hint = p.m.hint[x, y], flag = p.m.flag[x, y], beacon = beacon and not (x%beacon and y%beacon), cheat = cheat, hide = False)
-        img = Image.fromarray(self.image)
-        img = ImageChops.invert(img)
-        plt.imshow(img)
-        self.draw()
-        #img.save(filePath + "step" + repr(cnt) + '.png')
 
     def plotFromFile(self, cnt):
         img = Image.open(filePath + "step" + repr(cnt) + '.png')
