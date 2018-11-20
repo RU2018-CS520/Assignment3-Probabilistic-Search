@@ -151,10 +151,7 @@ class player(object):
             sumP = np.sum(tempProb)
         if sumP == 0:
             print('E: solution.normalizeP. zero sumP')
-            print(np.max(tempProb))
-            print(list(map(lambda x: np.where(x)[0][0], self.targetHistory)))
-            print(list(map(lambda x: np.where(x)[0], self.reportHistory)))
-            self.b.visualize()
+            exit()
         tempProb = tempProb / sumP
         return tempProb
 
