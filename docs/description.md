@@ -122,7 +122,7 @@ class frame.board b: terrain map
 bool quickRes:
 	True: less frequently to normalize prob, faster
 	False: normalize prob every time, more precise
-int double in [1 : 4]: cell types that need double check. takes more steps but much fewer unsolvable boards
+int double in [1 : 4]: cell types that need a double check. takes more steps but much fewer unsolvable boards
 	False: no double check
 int rule in [1 : 5]: search strategy
 int maxIter in [1 : inf]: max search times in a board, boards exceed will be treated as unsolvable ones
