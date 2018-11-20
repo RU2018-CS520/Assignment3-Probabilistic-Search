@@ -1,0 +1,121 @@
+\documentclass[letter]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{makecell}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage[all]{hypcap}
+\usepackage[space]{grffile}
+\usepackage{enumitem}
+\usepackage{bm}
+\usepackage{bbm}
+\usepackage{nccmath, mathtools}
+\usepackage{amsthm,amssymb}
+
+\newlist{questions}{enumerate}{1}
+\setlist[questions, 1]{label = \arabic*}
+\newlist{bonus}{enumerate}{1}
+\setlist[bonus, 1]{label = Bonus \arabic*}
+
+
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.75in}
+\addtolength{\evensidemargin}{-0.75in}
+\addtolength{\textwidth}{1.5in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.5in}
+\setlength\parindent{0pt}
+\setlength{\parskip}{5pt}
+
+\title{CS 520: Assignment 3 - Probabilistic Search (and Destroy)}
+\author{Haoyang Zhang, Han Wu, Shengjie Li, Zhichao Xu}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction, group members and division of workload}
+\label{sec:Introduction}
+
+In this group project, we implemented a minesweeper solver that far exceeded our expectation. Not only can our program solve the normal minesweeper, but also it can solve minesweeper with inaccurate information. Our program also has a gorgeous GUI and can visualize the progress of solving minesweeper by animation. \\
+\begin{tabular}{| p{2.5cm} | p{\textwidth -3.5cm} |}
+	\hline
+	\makecell[c]{Name \\ RUID} & Workload \\
+	\hline
+	\makecell[c]{Haoyang Zhang \\ 188008687} & {Implemented the minesweeper solver. Finished the writing of report for most of the questions. Wrote \textit{Solution Algorithm Explanation.html} and \textit{Uncertainty Explanation.html} which are two documents about our algorithm} \\
+	\hline
+	\makecell[c]{Han Wu \\ 189008460} & {Ran tests and generated figures for question \hyperref[han]{2.4}. Finished the writing of report for question \hyperref[han]{2.4}} \\
+	\hline
+	\makecell[c]{Shengjie Li \\ 188008047} & {Designed and implemented the GUI of our program. Implemented a function that can generate animation of the progress of solving minesweeper. Finished the format design of whole report using \LaTeX. } \\
+	\hline
+	\makecell[c]{Zhichao Xu \\ 188008912} & {Proofread the report. Ran tests and generated figures for question \hyperref[zhichao1]{2.5} and question \hyperref[zhichao2]{4.1}. Finished the writing of report for question \hyperref[zhichao1]{2.5} and question \hyperref[zhichao2]{4.1}.} \\
+	\hline
+\end{tabular}
+
+
+\section{A Stationary Target}
+\label{sec:A Stationary Target}
+\begin{enumerate}
+	\item {Given observations up to time $ t $ (Observations$ _t $ ), and a failure searching Cell$ _j $ (Observations$ _t+1 $ = Observations$_t \wedge $ Failure in Cell$ _j $ ), how can Bayes' theorem be used to efficiently update the belief state, i.e., compute: } 
+	\begin{align}
+		\mathbb{P} \text{(Target in Cell$ _i | $Observations$_t $  $\wedge $ Failure in Cell$ _j $).}
+	\end{align}
+	
+	\item {Given the observations up to time $ t $, the belief state captures the \textbf{current probability the target is in a given cell}. What is the probability that the target will be \textbf{found} in Cell i if it is searched:} 
+	\begin{align}
+	\mathbb{P} \text{(Target found in Cell$ _i | $Observations$_t $)?}
+	\end{align}
+	
+	\item {Consider comparing the following two decision rules:
+		\begin{itemize}
+			\item {Rule 1: At any time, search the cell with the highest probability of containing the target.}
+			\item {Rule 2: At any time, search the cell with the highest probability of finding the target.}
+		\end{itemize} 
+		\par{For either rule, in the case of ties between cells, consider breaking ties arbitrarily. How can these rules be interpreted / implemented in terms of the known probabilities and belief states?}
+		\par{For a fixed map, consider repeatedly using each rule to locate the target (replacing the target at a new,
+			uniformly chosen location each time it is discovered). On average, which performs better (i.e., requires less
+			searches), Rule 1 or Rule 2? Why do you think that is? Does that hold across multiple maps?}
+		}
+	
+	\item {Consider modifying the problem in the following way: at any time, you may only search the cell at your
+		current location, or move to a neighboring cell (up/down, left/right). Search or motion each constitute a single
+		`action'. In this case, the `best' cell to search by the previous rules may be out of reach, and require travel.
+		One possibility is to simply move to the cell indicated by the previous rules and search it, but this may incur a
+		large cost in terms of required travel. How can you use the belief state and your current location to determine
+		whether to search or move (and where to move), and minimize the total number of actions required? Derive a
+		decision rule based on the current belief state and current location, and compare its performance to the rule
+		of simply always traveling to the next cell indicated by \textbf{Rule 1} or \textbf{Rule 2}. Discuss.}
+	
+	\item {An old joke goes something like the following: 
+		\begin{center}
+			\textit{A policeman sees a drunk man searching for something under a streetlight and asks what the drunk has lost.
+				He says he lost his keys and they both look under the streetlight together. After a few minutes the policeman
+				asks if he is sure he lost them here, and the drunk replies, no, and that he lost them in the park. The
+				policeman asks why he is searching here, and the drunk replies, ”the light is better here”.}
+		\end{center}
+		\par{In light of the results of this project, discuss.}
+		}
+\end{enumerate}
+
+\section{A Moving Target}
+\label{sec:A Moving Target}
+\par{In this section, the target is no longer stationary, and can move between neighboring cells. Each time you perform
+	a search, if you fail to find the target the target will move to a neighboring cell (with uniform probability for each).
+	However, all is not lost - whenever the target moves, surveillance reports to you that the target was seen at a \textbf{Type1
+	$ \times $ Type2} border where Type1 and Type2 are the cell types the target is moving between (though it is not reported
+	which one was the exit point and which one the entry point. }
+	
+\par{Implement this functionality in your code. How can you update your search to make use of this extra information?
+	How does your belief state change with these additional observations? Update your search accordingly, and again
+	compare \textbf{Rule 1} and \textbf{Rule 2}.}
+
+\par{Re-do question 4) above in this new environment with the moving target and extra information.}
+\end{document}
