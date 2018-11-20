@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 import frame
 
@@ -265,19 +266,20 @@ class player(object):
         valid = (self.b.prob != 0)
         if self.b.targetMoving:
             factor[valid] = 1 / (1 - self.b.prob[valid] * self.b.sucP[valid])
-            searchCost[valid] = base - factor[valid] * (base - self.b.prob[valid])
+            searchCost[valid] = (factor[valid] - 1) * (base - self.b.prob[valid])
+
         else:
             factor = 1 / (1 - self.b.prob * self.b.sucP)
-            searchCost = base - factor * (base - self.b.prob)
+            searchCost = (factor - 1) * (base - self.b.prob)
 
         if self.b.moving:
             tempCost = np.sum(self.b.prob * self.b.dist[row, col])
             for nRow in range(self.b.rows):
                 for nCol in range(self.b.cols):
                     if valid[nRow, nCol]:
-                        movingCost[nRow, nCol] = tempCost - factor[nRow, nCol] * np.sum(self.b.prob * self.b.dist[nRow, nCol])
+                        movingCost[nRow, nCol] = (factor[nRow, nCol] - 1) * np.sum(self.b.prob * self.b.dist[nRow, nCol])
 
-        value = searchCost - movingCost
+        value = searchCost + movingCost + self.b.dist[row, col]
         value[~valid] = np.inf
 
         pos = np.unravel_index(np.argmin(value), value.shape) #use min instead
@@ -314,7 +316,7 @@ class player(object):
             if len(self.searchHistory) > self.maxIter:
                 break
 
-        #   self.b.visualize()
+            #self.b.visualize()
         return
 
 
@@ -323,7 +325,15 @@ if __name__ == '__main__':
     p = player(b, double = 2, rule = 5)
     p.solve()
     print(p.history)
-    print(len(p.targetHistory))
     print(len(p.history))
+    # for i in range(500):
+    #   tempB = copy.deepcopy(b)
+    #   tempB.buildTerrain()
+    #   tempB.hideTarget()
+    #   p = player(tempB, double = 2, rule = 2)
+    #   p.solve()
+    #   # print(p.history)
+    #   # print(len(p.targetHistory))
+    #   print(len(p.history))
 
-    p.b.visualize()
+    # # p.b.visualize()
