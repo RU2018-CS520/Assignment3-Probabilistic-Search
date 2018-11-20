@@ -73,8 +73,7 @@ class board(object):
         pos = int(np.floor(np.random.random() * self.rows * self.cols))
         row, col = divmod(pos, self.cols)
         self._target = (row, col)
-        if self.targetMoving:
-            self.targetHistory.append(self._target)
+        self.targetHistory.append(self._target)
         return
 
     #init border
