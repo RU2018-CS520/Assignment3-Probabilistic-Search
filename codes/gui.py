@@ -207,7 +207,7 @@ class Window(QWidget):
         print('Trying to construct a(an) ' + repr(rows) + 'x' + repr(cols) + ' maze. Agent teleporting is ' + repr(moving) + '. Target moving is ' + repr(targetMoving))
         print('Rule ' + repr(rule) + ' double ' + repr(double))
         b = frame.board(size = rows, moving = moving, targetMoving = targetMoving)
-        self.p = solution.player(b, double = (False, double)[double != 0], rule = 5)
+        self.p = solution.player(b, double = (False, double)[double != 0], rule = rule)
         print('Construction completed.')
         print('Player is ready, trying to solve.')
         self.p.solve()
@@ -335,7 +335,7 @@ class Canvas(FigureCanvas):
         normProb = (b.probHistory[currentStepTarget] / np.max(b.probHistory[currentStepTarget]))
         print(normProb[x, y])
         if [x, y] == [tx, ty]:
-            image[tx*16 : tx*16+16, ty*16 : ty*16+16] = b.tile(terrain = b.cell[tx, ty], prob = normProb[tx, ty], target = True, hunter = True, search = b.search, beacon = (beacon and not (tx%beacon and ty%beacon)))
+            image[x*16 : x*16+16, y*16 : y*16+16] = b.tile(terrain = b.cell[x, y], prob = normProb[x, y], target = True, hunter = True, search = b.search, beacon = (beacon and not (x%beacon and y%beacon)))
         else:
             image[x*16 : x*16+16, y*16 : y*16+16] = b.tile(terrain = b.cell[x, y], prob = normProb[x, y], target = False, hunter = True, search = b.search, beacon = (beacon and not (x%beacon and y%beacon)))
             image[tx*16 : tx*16+16, ty*16 : ty*16+16] = b.tile(terrain = b.cell[tx, ty], prob = normProb[tx, ty], target = True, hunter = False, search = b.search, beacon = (beacon and not (tx%beacon and ty%beacon)))
@@ -344,7 +344,7 @@ class Canvas(FigureCanvas):
         im = plt.imshow(img, animated = True)
         print('Finished')
         currentStepAgent += 1
-        if hint == 's':
+        if hint == 's' and len(b.targetHistory) > 1:
             currentStepTarget += 1
         if currentStepAgent >= len(p.history):
             print('Stop!')
