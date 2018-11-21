@@ -279,7 +279,7 @@ class player(object):
                     if valid[nRow, nCol]:
                         movingCost[nRow, nCol] = (factor[nRow, nCol] - 1) * np.sum(self.b.prob * self.b.dist[nRow, nCol])
 
-        value = searchCost + movingCost - self.b.dist[row, col]
+        value = searchCost - movingCost - self.b.dist[row, col]
         value[~valid] = -np.inf
 
         pos = np.unravel_index(np.argmax(value), value.shape)
