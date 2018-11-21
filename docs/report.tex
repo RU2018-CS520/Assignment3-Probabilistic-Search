@@ -68,11 +68,28 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 	\begin{align}
 		\mathbb{P} \text{(Target in Cell$ _i | $Observations$_t $  $\wedge $ Failure in Cell$ _j $).}
 	\end{align}
-	
-	\item {Given the observations up to time $ t $, the belief state captures the \textbf{current probability the target is in a given cell}. What is the probability that the target will be \textbf{found} in Cell i if it is searched:} 
+	\begin{align*}
+		\shortintertext{When $ i \ne j $,} 
+		&\mathbb{P} \text{(Target in Cell$ _i | $Observations$_t $  $\wedge $ Failure in Cell$ _j $)} \\
+		&= \alpha \mathbb{P} \text{(Target in Cell$ _i | $Observations$_t $)} \\
+		&= \alpha \cdot a_{it}. 
+		\shortintertext{When $ i = j $,} 
+		& \mathbb{P} \text{(Target in Cell$ _j | $Observations$_t $  $\wedge $ Failure in Cell$ _j $)} \\
+		&= \alpha \mathbb{P} \text{(Target in Cell$ _j | $Observations$_t $)}  \cdot \mathbb{P} \text{(Target not found in Cell$ _j | $Target in Cell$ _j $)} \\
+		&= \alpha \cdot a_{jt} \cdot q. \\
+		\alpha &= \frac{1}{\sum_{i \ne j} (\alpha \cdot a_{it}) + \alpha \cdot a_{jt} \cdot q} = \frac{1}{1 - a_{jt}(1-q)}. \\
+		a_{i0} &= \frac{1}{2500} \text{ for } i = 0, \dots, 2499 
+	\end{align*}
+	\item {Given the observations up to time $ t $, the belief state captures the \textbf{current probability the target is in a given cell}. What is the probability that the target will be \textbf{found} in Cell$ _i $ if it is searched:} 
 	\begin{align}
 	\mathbb{P} \text{(Target found in Cell$ _i | $Observations$_t $)?}
 	\end{align}
+	\begin{align*}
+		&\mathbb{P} \text{(Target found in Cell$ _i | $Observations$_t $)} \\
+		&= \mathbb{P} \text{(Target in Cell$ _i | $Observations$_t $)}(1-\mathbb{P} \text{(Target not found in Cell$ _i | $Target in Cell$ _i$)}) \\
+		&= a_{it} \cdot (1 - q) \\
+		a_{i0} &= \frac{1}{2500} \text{ for } i = 0, \dots, 2499 
+	\end{align*}
 	
 	\item {Consider comparing the following two decision rules:
 		\begin{itemize}
