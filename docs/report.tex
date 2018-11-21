@@ -52,13 +52,13 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 	\hline
 	\makecell[c]{Name \\ RUID} & Workload \\
 	\hline
-	\makecell[c]{Haoyang Zhang \\ 188008687} & {Implemented the minesweeper solver. Finished the writing of report for most of the questions. Wrote \textit{Solution Algorithm Explanation.html} and \textit{Uncertainty Explanation.html} which are two documents about our algorithm} \\
+	\makecell[c]{Haoyang Zhang \\ 188008687} & {Implemented the searching solver. Wrote UpdateExplanation.html and RuleExplanation.html which are two documents about our algorithm. Ran test for a moving target part.} \\
 	\hline
-	\makecell[c]{Han Wu \\ 189008460} & {Ran tests and generated figures for question \hyperref[han]{2.4}. Finished the writing of report for question \hyperref[han]{2.4}} \\
+	\makecell[c]{Han Wu \\ 189008460} & {Wrote the scripts to test the algorithm for question 4 in part one and moving target part. Ran test together with Haoyang Zhang in moving target part. Generate most of the figures in the test. Wrote the report about question 4 in part one and the moving target part.} \\
 	\hline
-	\makecell[c]{Shengjie Li \\ 188008047} & {Designed and implemented the GUI of our program. Implemented a function that can generate animation of the progress of solving minesweeper. Finished the format design of whole report using \LaTeX. } \\
+	\makecell[c]{Shengjie Li \\ 188008047} & {Designed and implemented the GUI of our program. Implemented a function that can generate animation of the progress of searching and destroying. Finished the format design of the report using \LaTeX. } \\
 	\hline
-	\makecell[c]{Zhichao Xu \\ 188008912} & {Proofread the report. Ran tests and generated figures for question \hyperref[zhichao1]{2.5} and question \hyperref[zhichao2]{4.1}. Finished the writing of report for question \hyperref[zhichao1]{2.5} and question \hyperref[zhichao2]{4.1}.} \\
+	\makecell[c]{Zhichao Xu \\ 188008912} & {Ran tests and generated figures for some questions.} \\
 	\hline
 \end{tabular}
 
@@ -104,7 +104,31 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 		\par{For a fixed map, consider repeatedly using each rule to locate the target (replacing the target at a new,
 			uniformly chosen location each time it is discovered). On average, which performs better (i.e., requires less
 			searches), Rule 1 or Rule 2? Why do you think that is? Does that hold across multiple maps?}
-		}
+		} \\
+	
+	We can use double check to help searching. When we meet at flat or hilly, we search the
+	second times when we do not find target at first. We call this “Double-check search”
+	case. We use Rule 1, Rule 2, and Rule 3 to supervise our search. Rule 1 and Rule 2 is
+	just the ones mentioned in the context. Rule 3 is an improved version. 5000 maps are
+	generated and we use 3 rules to search the target in the map. The result is shown in Fig \ref{fig:part1-q345.png}.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.7\textwidth]{fig/part1-q345.png}
+		\caption{Number of actions in double-check search case}
+		\label{fig:part1-q345.png}
+	\end{figure}
+	
+	
+	From the figure above, we can see that the performance of Rule 1 is the worst. Rule 2
+	and Rule 3 are similar. The means of Rule1, Rule 2, and Rule 3 are 6287.49, 5223.53,
+	and 5145.19. The average number of actions of Rule 3 is the smallest one among three
+	rules. So, Rule 3 is the best. The variances of Rule1, Rule 2, and Rule 3 are
+	54138591.92, 42819190.19, and 39314588.23. From this view, we can also conclude
+	that Rule 3 is better. When the number of search actions is beyond 100000, we call it
+	unsolvable because it is extremely hard to find the target under this circumstance. The
+	fail rate of Rule1, Rule 2, and Rule 3 are 0.0026, 0.008, 0.0116. Rule 3 may sometimes
+	not be able to find the target although it performs better.
 	
 	\item {Consider modifying the problem in the following way: at any time, you may only search the cell at your
 		current location, or move to a neighboring cell (up/down, left/right). Search or motion each constitute a single
