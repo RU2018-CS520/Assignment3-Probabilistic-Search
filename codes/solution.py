@@ -279,10 +279,10 @@ class player(object):
                     if valid[nRow, nCol]:
                         movingCost[nRow, nCol] = (factor[nRow, nCol] - 1) * np.sum(self.b.prob * self.b.dist[nRow, nCol])
 
-        value = searchCost + movingCost + self.b.dist[row, col]
-        value[~valid] = np.inf
+        value = searchCost + movingCost - self.b.dist[row, col]
+        value[~valid] = -np.inf
 
-        pos = np.unravel_index(np.argmin(value), value.shape) #use min instead
+        pos = np.unravel_index(np.argmax(value), value.shape)
         return pos
 
     #solver
@@ -323,8 +323,8 @@ class player(object):
 
 
 if __name__ == '__main__':
-    b = frame.board(size = 50, moving = False, targetMoving = False)
-    p = player(b, double = 2, rule = 2)
+    b = frame.board(size = 10, moving = True, targetMoving = True)
+    p = player(b, double = 2, rule = 5)
     p.solve()
     print(b.probHistory)
     print(p.history)
