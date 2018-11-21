@@ -100,5 +100,24 @@ Therefore, for a given board, <span class="math inline"><span class="katex"><spa
 </code></pre>
 <h3><a id="Discussion_131"></a>Discussion</h3>
 <p>Actually, we can show that Rule 2 is a good approximate of Rule 5 in the case hunter can teleport but the target can also move. In reports, we performed an experiment to compare Rule 2 and Rule 5, and the result of them are similar.</p>
+<h2><a id="Double_Check_134"></a>Double Check</h2>
+<h3><a id="Idea_135"></a>Idea</h3>
+<p>Notices that sometime we may fail to find the target in Flat. Once we failed, this block’s probablity will dramatically decrease, which leads to millions more searching.<br>
+Therefore, we could use double check once a block’s probability becomes too small.</p>
+<h3><a id="Pseudo_Code_139"></a>Pseudo Code</h3>
+<pre><code>doubleThreshold = ceil(np.log(0.01) / log(failP) - 1
+
+for each time search a block pos:
+    doubleCounter[pos] ++
+    if doubleCounter[pos] &gt;= doubleThreshold[pos]
+        update()
+        search(pos)
+    update()
+</code></pre>
+<h3><a id="Discussion_151"></a>Discussion</h3>
+<ol>
+<li>Though Double Check may increase the total actions of a given board, but it will decrease the probability of solving a board for more than 1M steps. Note that 1M steps is unacceptable.</li>
+<li>Note that not only Flat, but also all blocks can be double check. In practice, we double check Flat and Hilly because they are the most common cases which lead to 1M steps.</li>
+</ol>
 
 </body></html>
