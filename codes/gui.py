@@ -232,8 +232,8 @@ class Window(QWidget):
 
         self.canvas.setArgument(self.p, b)
         self.canvas.initUI()
-        self.slider.setMaximum(len(self.p.history) - 1)
-        sliderMax = len(self.p.history) - 1
+        self.slider.setMaximum(len(self.p.history))
+        sliderMax = len(self.p.history)
         if self.checkBoxAnimation.isChecked():
             self.animate()
         self.buttonStartAnimation.setEnabled(True)
@@ -309,10 +309,10 @@ class Canvas(FigureCanvas):
         global beacon
         global anim
         global image
-        l = 1
-        r = i + 1
+        l = 0
+        r = i
         if i >= currentStepAgent:
-            l = currentStepAgent + 1
+            l = currentStepAgent
         else:
             self.initUI()
         for j in range(l ,r):
@@ -324,7 +324,9 @@ class Canvas(FigureCanvas):
 
                 if hint == 's':
                     print(currentStepTarget)
-                    normProbPre = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
+                    if currentStepProb >= len(b.probHistory) - 1:
+                        currentStepProb -= 1
+                    normProbPre = (b.probHistory[currentStepProb + 1] / np.max(b.probHistory[currentStepProb + 1]))
                     for row in range(b.rows):
                         for col in range(b.cols):
                             image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProbPre[row, col], target = False, hunter = False, search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
@@ -341,6 +343,11 @@ class Canvas(FigureCanvas):
             else:
                 image[x*16 : x*16+16, y*16 : y*16+16] = b.tile(terrain = b.cell[x, y], prob = normProb[x, y], target = False, hunter = True, search = b.search, beacon = (beacon and not (x%beacon and y%beacon)))
                 image[tx*16 : tx*16+16, ty*16 : ty*16+16] = b.tile(terrain = b.cell[tx, ty], prob = normProb[tx, ty], target = True, hunter = False, search = b.search, beacon = (beacon and not (tx%beacon and ty%beacon)))
+            currentStepAgent += 1
+            if hint == 's':
+                currentStepProb += 1
+                if len(b.targetHistory) > 1:
+                    currentStepTarget += 1
 
         img = Image.fromarray(image)
         img = ImageChops.invert(img)
@@ -364,7 +371,9 @@ class Canvas(FigureCanvas):
 
             if hint == 's':
                 print(currentStepTarget)
-                normProbPre = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
+                if currentStepProb >= len(b.probHistory) - 1:
+                    currentStepProb -= 1
+                normProbPre = (b.probHistory[currentStepProb + 1] / np.max(b.probHistory[currentStepProb + 1]))
                 for row in range(b.rows):
                     for col in range(b.cols):
                         image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProbPre[row, col], target = False, hunter = False, search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
@@ -400,6 +409,12 @@ class Canvas(FigureCanvas):
         global p
         global b
         global beacon
+        global currentStepAgent
+        global currentStepTarget
+        global currentStepProb
+        currentStepAgent = 0
+        currentStepProb = 0
+        currentStepTarget = 0
         prob = np.full((b.rows, b.cols), (1. / (b.rows * b.cols)), dtype = np.float16)
         normProb = (prob / np.max(prob))
         image = np.zeros((b.rows*16, b.cols*16, 3), dtype = np.uint8)
