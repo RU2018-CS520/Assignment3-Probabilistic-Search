@@ -152,9 +152,11 @@ class Window(QWidget):
 
     def nextStep(self):
         global SliderMax
-        global currentStep
+        global currentStepAgent
+        global currentStepTarget
+        global currentStepProb
         value = self.slider.value()
-        currentStep = value
+        currentStepAgent = value
         if value < sliderMax:
             if value == 0:
                 self.canvas.initUI()
@@ -164,8 +166,13 @@ class Window(QWidget):
 
     def animate(self):
         global sliderMax
-        global currentStep
-        currentStep = 0
+        global currentStepAgent
+        global currentStepTarget
+        global currentStepProb
+        currentStepAgent = 0
+        currentStepProb = 0
+        currentStepTarget = 0
+
         self.slider.setValue(0)
         self.labelStep.setText("Step: 0")
         self.buttonStartAnimation.setEnabled(False)
@@ -176,8 +183,13 @@ class Window(QWidget):
 
     def start(self):
         global sliderMax
-        global currentStep
-        currentStep = 0
+        global currentStepAgent
+        global currentStepTarget
+        global currentStepProb
+        currentStepAgent = 0
+        currentStepProb = 0
+        currentStepTarget = 0
+
         self.slider.setValue(0)
         self.labelStep.setText("Step: 0")
         self.buttonStart.setEnabled(False)
@@ -186,7 +198,7 @@ class Window(QWidget):
 
         rows = int(self.lineEditX.text())
         cols = int(self.lineEditX.text())
-        moving = self.checkBoxMoving.isChecked()
+        moving = (True, False)[self.checkBoxMoving.isChecked()]
         targetMoving = self.checkBoxTargetMoving.isChecked()
         rule = 1
         if self.radio1.isChecked():
@@ -218,7 +230,7 @@ class Window(QWidget):
         print(b.targetHistory)
         print(len(b.probHistory))
 
-        self.canvas.setArguement(self.p, b)
+        self.canvas.setArgument(self.p, b)
         self.canvas.initUI()
         self.slider.setMaximum(len(self.p.history) - 1)
         sliderMax = len(self.p.history) - 1
@@ -249,7 +261,7 @@ class Canvas(FigureCanvas):
                 QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
-    def setArguement(self, player, board, _beacon = 16):
+    def setArgument(self, player, board, _beacon = 16):
         global p
         global b
         global beacon
@@ -261,10 +273,12 @@ class Canvas(FigureCanvas):
         print('Started plotting')
         global currentStepAgent
         global currentStepTarget
+        global currentStepProb
         global p
         global anim
         currentStepAgent = 0
         currentStepTarget = 0
+        currentStepProb = 0
         anim = FuncAnimation(self.fig, self.animate, init_func = self.init, interval = 20, blit = True)
         #self.draw()
         print('Plotting completed')
@@ -288,27 +302,56 @@ class Canvas(FigureCanvas):
 
     def plotOne(self, i):
         print('Plotting step ' + repr(i) + ' . Please wait.')
-        global currentStep
+        global currentStepAgent
+        global currentStepTarget
+        global currentStepProb
+        global p
+        global beacon
+        global anim
         global image
         l = 1
         r = i + 1
-        if i >= currentStep:
-            l = currentStep + 1
+        if i >= currentStepAgent:
+            l = currentStepAgent + 1
         else:
             self.initUI()
         for j in range(l ,r):
             print('Drawing step ' + repr(j))
+            if j > 0:
+                [px, py], hint = p.history[j - 1]
+                normProb = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
+                image[px*16 : px*16+16, py*16 : py*16+16] = b.tile(terrain = b.cell[px, py], prob = normProb[px, py], target = False, hunter = False, search = b.search, beacon = (beacon and not (px%beacon and py%beacon)))
+
+                if hint == 's':
+                    print(currentStepTarget)
+                    normProbPre = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
+                    for row in range(b.rows):
+                        for col in range(b.cols):
+                            image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProbPre[row, col], target = False, hunter = False, search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
+
+                    [ptx, pty] = b.targetHistory[currentStepTarget - 1]
+                    image[ptx*16 : ptx*16+16, pty*16 : pty*16+16] = b.tile(terrain = b.cell[ptx, pty], prob = normProbPre[ptx, pty], target = False, hunter = False, search = b.search, beacon = (beacon and not (ptx%beacon and pty%beacon)))
+
             [x, y], hint = p.history[j]
-            image[x*16 : x*16+16, y*16 : y*16+16] = p.m.tile(covered = p.m.covered[x, y], mine = p.m._mine[x, y], clue = p.m._clue[x, y], hint = p.m.hint[x, y], flag = p.m.flag[x, y], beacon = beacon and not (x%beacon and y%beacon), cheat = cheat, hide = False)
+            [tx, ty] = b.targetHistory[currentStepTarget]
+            normProb = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
+            print(normProb[x, y])
+            if [x, y] == [tx, ty]:
+                image[x*16 : x*16+16, y*16 : y*16+16] = b.tile(terrain = b.cell[x, y], prob = normProb[x, y], target = True, hunter = True, search = b.search, beacon = (beacon and not (x%beacon and y%beacon)))
+            else:
+                image[x*16 : x*16+16, y*16 : y*16+16] = b.tile(terrain = b.cell[x, y], prob = normProb[x, y], target = False, hunter = True, search = b.search, beacon = (beacon and not (x%beacon and y%beacon)))
+                image[tx*16 : tx*16+16, ty*16 : ty*16+16] = b.tile(terrain = b.cell[tx, ty], prob = normProb[tx, ty], target = True, hunter = False, search = b.search, beacon = (beacon and not (tx%beacon and ty%beacon)))
+
         img = Image.fromarray(image)
         img = ImageChops.invert(img)
         im = plt.imshow(img, animated = True)
         self.draw()
-        currentStep = i
+        currentStepAgent = i
 
     def animate(*args):
         global currentStepAgent
         global currentStepTarget
+        global currentStepProb
         global p
         global image
         global beacon
@@ -316,13 +359,12 @@ class Canvas(FigureCanvas):
         print('Drawing step ' + repr(currentStepAgent))
         if currentStepAgent > 0:
             [px, py], hint = p.history[currentStepAgent - 1]
-            normProb = (b.probHistory[currentStepTarget] / np.max(b.probHistory[currentStepTarget]))
+            normProb = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
             image[px*16 : px*16+16, py*16 : py*16+16] = b.tile(terrain = b.cell[px, py], prob = normProb[px, py], target = False, hunter = False, search = b.search, beacon = (beacon and not (px%beacon and py%beacon)))
 
             if hint == 's':
-                print(np.max(b.probHistory[currentStep - 1]))
-                print(np.sum(b.probHistory[currentStep - 1]))
-                normProbPre = (b.probHistory[currentStepTarget - 1] / np.max(b.probHistory[currentStepTarget - 1]))
+                print(currentStepTarget)
+                normProbPre = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
                 for row in range(b.rows):
                     for col in range(b.cols):
                         image[row*16 : row*16+16, col*16 : col*16+16] = b.tile(terrain = b.cell[row, col], prob = normProbPre[row, col], target = False, hunter = False, search = b.search, beacon = (beacon and not (row%beacon and col%beacon)))
@@ -332,7 +374,7 @@ class Canvas(FigureCanvas):
 
         [x, y], hint = p.history[currentStepAgent]
         [tx, ty] = b.targetHistory[currentStepTarget]
-        normProb = (b.probHistory[currentStepTarget] / np.max(b.probHistory[currentStepTarget]))
+        normProb = (b.probHistory[currentStepProb] / np.max(b.probHistory[currentStepProb]))
         print(normProb[x, y])
         if [x, y] == [tx, ty]:
             image[x*16 : x*16+16, y*16 : y*16+16] = b.tile(terrain = b.cell[x, y], prob = normProb[x, y], target = True, hunter = True, search = b.search, beacon = (beacon and not (x%beacon and y%beacon)))
@@ -344,8 +386,10 @@ class Canvas(FigureCanvas):
         im = plt.imshow(img, animated = True)
         print('Finished')
         currentStepAgent += 1
-        if hint == 's' and len(b.targetHistory) > 1:
-            currentStepTarget += 1
+        if hint == 's':
+            currentStepProb += 1
+            if len(b.targetHistory) > 1:
+                currentStepTarget += 1
         if currentStepAgent >= len(p.history):
             print('Stop!')
             anim.event_source.stop()
