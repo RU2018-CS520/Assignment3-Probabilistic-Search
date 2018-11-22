@@ -50,7 +50,7 @@ solveReport(report):
     reportHistory.append(report)
     return reUpFlag, direction
 reUpdateReprot(searchHistory, targetHistory):
-    for i in range(searchHistory):
+    for i in range(len(searchHistory)):
         updateP(searchHistory[i])
         updateReport(((targetHistory[i], targetHistory[i+1]), ))
     return
