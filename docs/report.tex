@@ -47,18 +47,18 @@
 \section{Introduction, group members and division of workload}
 \label{sec:Introduction}
 
-In this group project, we implemented a minesweeper solver that far exceeded our expectation. Not only can our program solve the normal minesweeper, but also it can solve minesweeper with inaccurate information. Our program also has a gorgeous GUI and can visualize the progress of solving minesweeper by animation. \\
+In this group project, we implemented a well-working solver that contains 5 searching strategies. This solver is also capable of dealing with a not-teleportable agent and a moving target. Our program also has a gorgeous GUI and can visualize the progress of solving by animation. \\
 \begin{tabular}{| p{2.5cm} | p{\textwidth -3.5cm} |}
 	\hline
 	\makecell[c]{Name \\ RUID} & Workload \\
 	\hline
-	\makecell[c]{Haoyang Zhang \\ 188008687} & {Implemented the searching solver. Wrote UpdateExplanation.html and RuleExplanation.html which are two documents about our algorithm. Ran test for a moving target part.} \\
+	\makecell[c]{Haoyang Zhang \\ 188008687} & {Implemented the searching solver. Wrote UpdateExplanation.html and RuleExplanation.html which are two documents about our algorithm, covering scores of important parts of our report (We put most of them into our report). Ran test for a moving target part.} \\
 	\hline
-	\makecell[c]{Han Wu \\ 189008460} & {Wrote the scripts to test the algorithm for question 4 in part one and moving target part. Ran test together with Haoyang Zhang in moving target part. Generate most of the figures in the test. Wrote the report about question 4 in part one and the moving target part.} \\
+	\makecell[c]{Han Wu \\ 189008460} & {Wrote the scripts to test the algorithm for question 4 in part one and moving target part. Ran tests together with Haoyang Zhang in moving target part. Generated most of the figures in the test. Wrote part of the report about question 4 in part one and the moving target part. Wrote answer for question 5.} \\
 	\hline
 	\makecell[c]{Shengjie Li \\ 188008047} & {Designed and implemented the GUI of our program. Implemented a function that can generate animation of the progress of searching and destroying. Finished the format design of the report using \LaTeX. } \\
 	\hline
-	\makecell[c]{Zhichao Xu \\ 188008912} & {Ran tests and generated figures for some questions.} \\
+	\makecell[c]{Zhichao Xu \\ 188008912} & {Helped revise and improve the codes through early-stage testing. Wrote scripts for experiments, did visualization and answered question 3.} \\
 	\hline
 \end{tabular}
 
@@ -106,11 +106,39 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 			searches), Rule 1 or Rule 2? Why do you think that is? Does that hold across multiple maps?}
 		} \\
 	
-	We can use double check to help searching. When we meet at flat or hilly, we search the
-	second times when we do not find target at first. We call this “Double-check search”
-	case. We use Rule 1, Rule 2, and Rule 3 to supervise our search. Rule 1 and Rule 2 is
-	just the ones mentioned in the context. Rule 3 is an improved version. 5000 maps are
-	generated and we use 3 rules to search the target in the map. The result is shown in Fig \ref{fig:part1-q345.png}.
+	\par{For a fixed map, we repeatedly used Rule 1 and Rule 2 to locate the target. The result is shown in Fig \ref{fig:xzc1}.}
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.7\textwidth]{fig/xzc1.png}
+		\caption{Fixed Board, Comparison of Rule 1 and Rule 2}
+		\label{fig:xzc1}
+	\end{figure}
+	
+	\par{The mean and variance of Rule 1 and Rule 2 are 6004.0966 and 56320634.4832, while
+	the number of Rule 2 are 4539.7006 and 37546839.3709 (after eliminating the
+	unsolvable cases). The fail rate for Rule 1 and Rule 2 are 0.33\% and 0.66\%. These
+	numbers are calculated through 5000 times of experiments. When the number of search
+	actions exceeds 100000, we note the board as unsolvable. Through our comparison, we
+	came into conclusion that Rule 2 is better than Rule 1. Also, it has larger fluctuations due
+	to the presence of unsolvable cases.}
+	\par{According to our understanding, Rule 2 is more close to the problem itself, because we
+	have P(Target not found in Cell | Target is in Cell). The improvement of Rule 2 compared to Rule 1 is that Rule 2 gets rid of the conditional probability and make more accurate inferences.}
+	\par{For multiple maps, such pattern still holds. The result is showed in Fig \ref{fig:xzc2}.}
+	
+	\begin{figure}
+		\centering
+		\includegraphics[width=0.7\textwidth]{fig/xzc2.png}
+		\caption{Fixed Board, Comparison of Rule 1 and Rule 2}
+		\label{fig:xzc2}
+	\end{figure}
+	
+	\par{The mean and variance of Rule 1 and Rule 2 are 6221.3866 and 59873979.75314046,
+	while the number of Rule 2 are 4682.4286, 40237182.382102035 (after eliminating the
+	unsolvable cases). The fail rate for Rule 1 and Rule 2 are 0.33\% and 0.66\%. These
+	numbers are also calculated through 5000 times of experiments.}
+	
+	In addition, we used a technique what we called ``double check'' to help searching. When we move to a flat cell, we would search it again if we have failed to find the target at the first search attempt. When we move to a hilly cell, if we have failed three search attempts on this cell, we would search it again. We call this “Double-check search” case. We use Rule 1, Rule 2, and Rule 3 to supervise our search. Rule 1 and Rule 2 is just the ones mentioned in the context. Even though Rule 3 does not have improvement, we also do some experiments because we find it interesting. In the experiment, 5000 maps are generated and we used 3 rules to search the target in the map. The result is shown in Fig \ref{fig:part1-q345.png}.
 	
 	\begin{figure}[H]
 		\centering
@@ -122,13 +150,7 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 	
 	From the figure above, we can see that the performance of Rule 1 is the worst. Rule 2
 	and Rule 3 are similar. The means of Rule1, Rule 2, and Rule 3 are 6287.49, 5223.53,
-	and 5145.19. The average number of actions of Rule 3 is the smallest one among three
-	rules. So, Rule 3 is the best. The variances of Rule1, Rule 2, and Rule 3 are
-	54138591.92, 42819190.19, and 39314588.23. From this view, we can also conclude
-	that Rule 3 is better. When the number of search actions is beyond 100000, we call it
-	unsolvable because it is extremely hard to find the target under this circumstance. The
-	fail rate of Rule1, Rule 2, and Rule 3 are 0.0026, 0.008, 0.0116. Rule 3 may sometimes
-	not be able to find the target although it performs better.
+	and 5145.19. The average number of actions of Rule 2 and Rule 3 are superior to Rule 1. So, Rule 2 and Rule 3 are better in this case. The variances of Rule1, Rule 2, and Rule 3 are 54138591.92, 42819190.19, and 39314588.23. From this perspective, we can also conclude that Rule 2 and Rule 3 are better. If the number of search actions is beyond 100,000, we call it unsolvable because it is extremely hard to find the target under this circumstance. The reason of it being unsolvable is that, if the target is on a `Flat' cell or a `Hilly' cell and we have failed several times searching on that cell, we would not be able to find the target no matter how many times we search it. To avoid the waste of time, we decided to terminate the program if the times of search is greater than 100,000, which we call it unsolvable. The fail rate of Rule1, Rule 2, and Rule 3 are 0.0026, 0.008, 0.0116. Rule 3 may sometimes not be able to find the target although it performs better.
 	
 	\item {Consider modifying the problem in the following way: at any time, you may only search the cell at your
 		current location, or move to a neighboring cell (up/down, left/right). Search or motion each constitute a single
@@ -171,7 +193,11 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 				policeman asks why he is searching here, and the drunk replies, ”the light is better here”.}
 		\end{center}
 		\par{In light of the results of this project, discuss.}
-		}
+		} \\
+	
+	\par{There are some links between the joke and our problem. There are also some differences between the drunk man in the joke and our search policy. Streetlight is a good thing. When you have streetlight, it is easier for you to find the keys than other area if they are actually under the streetlight. Flat area is just like the streetlight in the map. When the target is in one cell, you have the highest probability to find it if the cell is flat. So, you should search the flat area at first (and the result is: Rule 2 is better than Rule 1). However, searching the flat area is just one part of our policy. Another part is that we continuously update the probability. We continuously update our knowledge about the map. And this distinguishes our policy from the drunk man’s. We update the probability of finding the target in one cell every time after we finish one search. And we search the cell with the highest probability of finding the target at the next time. When the flat cell has been searched, the probability of finding the target in the cell becomes very low. So, next time we will not choose to search it. However, the drunk man doesn’t update his knowledge about the whole area. If he didn’t find the keys under the streetlight, he should update his knowledge and go to other areas to search. It’s unwise for him to keep searching under the streetlight.} 
+	\par{Another problem of the drunk man is that he doesn’t use his prior knowledge about the lost place. He remembers that he lost the keys in the park. So, he should search in the park at first although there may be no light. Actually, the drunk man’s situation is better than us. In the map, every cell has the same probability of owning the target and we know nothing about the position of the target at first.}
+	
 \end{enumerate}
 
 \section{A Moving Target}
@@ -230,11 +256,8 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 		\label{fig:part2-first}
 	\end{figure}
 	
-	From the figure above, we find that the performance of 3 rules are similar to each other.
-	The means of Rule1, Rule 2, and Rule 5 are 39.25, 37.82, and 38.04, which is close to
-	
-	each other. The variances of Rule1, Rule 2, and Rule 5 are 379.82, 347.52, and 351.06,
-	which is also similar.
+	From the figure above, we find that the performance of 3 rules are similar, but Rule 1 has a minor disadvantage against Rule 2 and Rule 5.
+	The means of Rule 1, Rule 2, and Rule 5 are 39.25, 37.82, and 38.04. The variances of Rule 1, Rule 2, and Rule 5 are 379.82, 347.52, and 351.06, from which we can see Rule 1 has a difference of ~3\% over the other two rules.
 	
 	\item {Update with additional observations} \\
 	Using the notion of particle filter, we can update reports easily. For a given cell, if it is not a possible previous block, all its samples should be ruled out. If it is a possible previous block, and if there are some possible neighbors according to the reports, its samples will migrate to them. But if there are no possible neighbors, all its samples will also be trapped in this block and die out. Then, resample all blocks.
@@ -282,7 +305,7 @@ In this group project, we implemented a minesweeper solver that far exceeded our
 	\begin{algorithm}[H]
 		\caption{reUpdateReprot(searchHistory, targetHistory)}
 		\begin{algorithmic}
-			\FOR{i in range(searchHistory)}
+			\FOR{i in range(len(searchHistory))}
 				\STATE updateP(searchHistory[i])
 				\STATE updateReport(((targetHistory[i], targetHistory[i+1]), ))
 			\ENDFOR
