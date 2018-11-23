@@ -291,8 +291,6 @@ maxSucP():
 	value = prob * sucP
 	return argmax(value)   
 		\end{lstlisting}
-		\item {Discussion} \\
-		When there are many blocks, $p_i \ll 1$, while $C \approx \frac{0.2}{0.1} + \frac{0.3}{0.3} + \frac{0.3}{0.7} + \frac{0.2}{0.9} = 3.65$ Therefore, in order to minimize $C_i'$, we can maximize $\alpha$, which is maximize $p_iq_i$
 	\end{itemize}
 
 	\item {Rule 3} \\
@@ -314,6 +312,32 @@ maxInfo():
 	\end{itemize}
 \end{enumerate}
 
+\subsubsection{Some other thoughts -- double check}
+\begin{itemize}
+	\item {Idea} 
+	\par{Notices that sometimes we might fail to find the target in Flat. Once we failed, this block’s probablity will dramatically decrease, which leads to thousands of more searching.}
+	
+	\par{For example, ignoring the $\alpha$, once we failed in a Flat, say $block_i$, $p_i = \frac{1}{25000}$, $p_iq_i = \frac{9}{250000} = 0.000036$. In order to search this block again, we have to make $p_jq_j < p_iq_i, j \ne i$. Therefore, we have to search other Flat blocks once, Hilly 2 times, Jungle 26 times and Cave 76 times, which is about 40 thousand times in total.}
+	
+	\par{Therefore, we could use double check once a block’s probability becomes too small.}
+	\item {Pseudo Code} 
+	\begin{lstlisting}
+doubleThreshold = ceil(np.log(0.01) / log(failP) - 1
+
+for each time search a block pos:
+	doubleCounter[pos] ++
+	if doubleCounter[pos] >= doubleThreshold[pos]
+		update()
+		search(pos)
+	update()
+	\end{lstlisting}
+	\item {Discussion} 
+	\begin{enumerate}
+		\item {Even with double check, we still might fail in a Flat, which leads to a much more than 40 thousand steps search. It is, however, much unlikely to happen. According to our experiment, only about 0.4\% boards need more than 100K steps to solve.}
+		\item {With double check, the number of boards need more than 100K steps are approximate to the number of more than 1M steps. But 1M steps is unacceptable, and therefore we stop solving these board and regard them as ``unsolvable''.}
+		\item {Note that not only Flat, but also all blocks can apply double-check. In practice, we double check Flat and Hilly because they are the most common cases which lead to 1M steps.}
+	\end{enumerate}
+\end{itemize}
 
 \subsection{Practice}
 \label{sec:1-practice}
@@ -430,7 +454,87 @@ maxInfo():
 	However, all is not lost - whenever the target moves, surveillance reports to you that the target was seen at a \textbf{Type1
 	$ \times $ Type2} border where Type1 and Type2 are the cell types the target is moving between (though it is not reported
 	which one was the exit point and which one the entry point. }
+\subsection{Theory}
+\label{sec:2-theory}
+\subsubsection{Optimal Rule for 1 Step in Theory}
+\begin{enumerate}
+	\item {Agents can teleport} \\
+	For a given cell, if the target is in this cell, the expectation of search times is:
+	$E(block_i) = \frac{1}{q_i}$
+	For the whole board, the expectation of search times is:
+	$C = E(E(block)) = \sum\limits_i\frac{p_i}{q_i} = \sum\limits_{j \ne i}\frac{p_j}{q_j} + \frac{p_i}{q_i}$
 	
+	If we decided to search $block_i$, by updating probabilities: (Details are in UpdateExplanation.html.)
+	$C_i' = -(p_iq_iC_i+ (1-p_iq_i)0) = -p_iq_i(\sum\limits_{j \ne i}\frac{\alpha p_j}{q_j} + \frac{\alpha p_i(1-q_i)}{q_i})$, where $\alpha = \frac{1}{1-p_iq_i}$
+	
+	$C_i' = -\alpha p_iq_i(\sum\limits_{j \ne i}\frac{p_j}{q_j} + \frac{p_i}{q_i} - p_i) = -\alpha p_iq_i(C-p_i)$
+	
+	Notice that $\alpha p_iq_i = \frac{p_iq_i}{1-p_iq_i} =\alpha-1$:
+	$C_i' = -(\alpha - 1)(C-p_i)$
+	\item {Agents have to move step by step} \\
+	In this case, we have to consider additional moving cost.
+	Denote $L = C + M$, where $L$ is the total cost of a given board, $C$ is previous searching cost, and $M$ is moving Cost.
+	
+	If we decided to search $block_i$ from $block_k$:
+	$L_i' = -p_iq_i(C_i - \sum\limits_{j \ne i}p_jd_{ij} -\alpha p_i(1-q_i)d_{ii}) - (1-p_iq_i)0 - d_{ki}$, where $d_{ij}$ is the distace from$block_i$ to $block_j$.
+	
+	Notice that $d_{ii} = 0$, $\alpha p_i(1-q_i)d_{ii} = 0 = \alpha p_iq_id_{ii}$
+	$L_i' = -(\alpha - 1)(C - p_i - \sum\limits_j p_jd_{ij}) - d_{ki}$.
+	
+	Actually, case 1 is a special case of case 2 where all $d_{ij} = 0$.
+\end{enumerate}
+\subsubsection{Our understandings and interpretations of rules}
+\begin{enumerate}
+	\item {Rule 4} \\
+	A rule for the case agents cannot teleport but targets are stationary.
+	\begin{itemize}
+		\item {idea} \\
+		Since there are many blocks, $\alpha \approx 1$, and therefore $d_{ki}$ is dominant. That is to say, the best rule is actually the least moving rule. We can approximately consider that the "value" of a target decreases exponentially in term of distance.
+		\item {Implementation} \\
+		$next = \arg\max\limits_i \frac{p_iq_i}{2^{d_i}}$
+		\item {Pseudo Code} 
+		\begin{lstlisting}
+minMove(pos):
+	value = prob * sucP / exp2(dist[pos])
+	return argmax(value)
+		\end{lstlisting}
+		\item {Discussion} 
+		\begin{enumerate}
+			\item {In order to achive the minimum moving, Here seems another rule, which seems a little bit weird: For each cell, search it a number times, then move to its unsearched neighbor. The number of each searching of a given block can be define below: \\
+			$N = \lceil\frac{1}{q_i}\rceil$, which is the expectation of searching times\\
+			In this case, $N(flat) = 2, N(hilly) = 2, N(Forest) = 4, N(Cave) = 10$.\\ Once we have not found the target in one round, make a U-turn and re-search all blocks in reversed order.\\
+			Therefore, for a given board, $E = (\sum\limits_i (p_iN_i) + 2500)/2 = 6500$}
+			\item {We cannot use Rule 5 directly because $\alpha \approx 1$. Even use float64 we still cannot distinguish some blocks.}
+		\end{enumerate}
+	\end{itemize}
+	
+	\item {Rule 5} \\
+	A rule for the case agents cannot teleport and targets can move.
+	\begin{itemize}
+		\item {idea} \\
+		In this case, many blocks are rule out becasue of witness reports. Therefore, we can directly use ``Optimal Rule'' to solve this case.
+		\item {Implementation} \\
+		$next = \arg\min\limits_i L_i'$
+		\item {Pseudo Code} 
+		\begin{lstlisting}
+minCost(pos):
+	factor = 1 / (1 - prob * sucP)
+	base = prob / sucP
+	sCost = (factor - 1) * (base - prob)
+	for each block pos:
+		mCost[tPos] = (factor[tPos] - 1) * sum(prob * dist[tPos])
+	value = sCost - mCost - dist[pos]
+	return argmax(value)  
+		\end{lstlisting}
+		\item {Discussion} \\
+		Actually, we can show that Rule 2 is a good approximate of Rule 5 in the case hunter can teleport but target can also move. In reports, we performed an experiment to compare Rule 2 and Rule 5, and the result of them are similar.
+	\end{itemize}
+\end{enumerate}
+	
+\subsection{Practice}
+\label{2-2practice}
+\subsubsection{Questions}
+\label{2-2-1questions}
 \par{Implement this functionality in your code. How can you update your search to make use of this extra information?
 	How does your belief state change with these additional observations? Update your search accordingly, and again
 	compare \textbf{Rule 1} and \textbf{Rule 2}.}
